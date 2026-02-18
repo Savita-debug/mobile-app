@@ -7,6 +7,7 @@ import com.medassist.app.data.model.ScheduledMedication
 import com.medassist.app.data.model.TodayScheduleResponse
 import com.medassist.app.data.repository.AdherenceRepository
 import com.medassist.app.data.repository.MedicationRepository
+import com.medassist.app.util.AlarmScheduler
 import com.medassist.app.util.TokenManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +32,8 @@ data class PatientDashboardUiState(
 class PatientDashboardViewModel @Inject constructor(
     private val medicationRepository: MedicationRepository,
     private val adherenceRepository: AdherenceRepository,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val alarmScheduler: AlarmScheduler
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PatientDashboardUiState())
@@ -51,6 +53,8 @@ class PatientDashboardViewModel @Inject constructor(
             scheduleResult.fold(
                 onSuccess = { schedule ->
                     _uiState.value = _uiState.value.copy(todaySchedule = schedule)
+                    // Schedule alarms for pending medications
+                    alarmScheduler.scheduleAlarms(schedule.medications)
                 },
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(
