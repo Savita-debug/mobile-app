@@ -49,7 +49,7 @@ class CaretakerDashboardViewModel @Inject constructor(
             try {
                 val response = apiService.getPatients()
                 if (response.isSuccessful) {
-                    val patients = response.body() ?: emptyList()
+                    val patients = response.body()?.results ?: emptyList()
                     val avgAdherence = if (patients.isNotEmpty()) {
                         patients.mapNotNull { it.adherenceRate }.average()
                     } else 0.0

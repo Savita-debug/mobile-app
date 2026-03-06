@@ -41,7 +41,7 @@ fun PatientDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(uiState.patient?.user?.name ?: "Patient Details")
+                    Text(uiState.patientDetail?.user?.name ?: uiState.patient?.user?.name ?: "Patient Details")
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -64,7 +64,7 @@ fun PatientDetailScreen(
     ) { paddingValues ->
         if (uiState.isLoading) {
             LoadingScreen(modifier = Modifier.padding(paddingValues))
-        } else if (uiState.error != null && uiState.patient == null) {
+        } else if (uiState.error != null && uiState.patient == null && uiState.patientDetail == null) {
             ErrorScreen(
                 message = uiState.error!!,
                 onRetry = { viewModel.loadPatientData() },
@@ -77,7 +77,72 @@ fun PatientDetailScreen(
                     .padding(paddingValues)
             ) {
                 // Patient info header
-                uiState.patient?.let { patient ->
+                uiState.patientDetail?.let { detail ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = MaterialTheme.shapes.medium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = detail.user.name.take(2).uppercase(),
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = detail.user.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                detail.age?.let {
+                                    Text(
+                                        text = "Age: $it",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    )
+                                }
+                                detail.medicalConditions?.let {
+                                    if (it.isNotBlank()) {
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Adherence from detail
+                            AdherenceRingChart(
+                                adherenceRate = detail.adherenceRate.toDouble(),
+                                size = 70
+                            )
+                        }
+                    }
+                } ?: uiState.patient?.let { patient ->
+                    // Fallback to old patient format
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

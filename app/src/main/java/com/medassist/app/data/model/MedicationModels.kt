@@ -9,7 +9,7 @@ data class Medication(
     val frequency: String,
     val timings: List<String>,
     val instructions: String?,
-    val patient: Int,
+    val patient: Any,
     @SerializedName("is_active")
     val isActive: Boolean
 )

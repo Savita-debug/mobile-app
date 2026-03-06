@@ -31,7 +31,7 @@ interface ApiService {
     // ==================== Patients ====================
 
     @GET("patients/")
-    suspend fun getPatients(): Response<List<Patient>>
+    suspend fun getPatients(): Response<PatientListResponse>
 
     @POST("patients/")
     suspend fun createPatient(
@@ -42,6 +42,11 @@ interface ApiService {
     suspend fun getPatient(
         @Path("id") id: Int
     ): Response<Patient>
+
+    @GET("patients/{id}/detail_with_data/")
+    suspend fun getPatientDetailWithData(
+        @Path("id") id: Int
+    ): Response<PatientDetailResponse>
 
     // ==================== Medications ====================
 

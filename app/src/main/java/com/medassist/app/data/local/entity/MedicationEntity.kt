@@ -37,6 +37,11 @@ data class MedicationEntity(
 
     companion object {
         fun fromMedication(medication: Medication): MedicationEntity {
+            val patientId = when (val p = medication.patient) {
+                is Int -> p
+                is Map<*, *> -> (p["id"] as? Number)?.toInt() ?: 0
+                else -> 0
+            }
             return MedicationEntity(
                 id = medication.id,
                 name = medication.name,
@@ -44,7 +49,7 @@ data class MedicationEntity(
                 frequency = medication.frequency,
                 timings = medication.timings.joinToString(",", "[", "]") { "\"$it\"" },
                 instructions = medication.instructions,
-                patient = medication.patient,
+                patient = patientId,
                 isActive = medication.isActive
             )
         }

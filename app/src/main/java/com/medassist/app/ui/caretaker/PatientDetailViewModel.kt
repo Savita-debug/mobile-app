@@ -18,6 +18,7 @@ import javax.inject.Inject
 data class PatientDetailUiState(
     val isLoading: Boolean = true,
     val patient: Patient? = null,
+    val patientDetail: PatientDetailResponse? = null,
     val medications: List<Medication> = emptyList(),
     val adherenceStats: AdherenceStatsResponse? = null,
     val adherenceHistory: AdherenceHistoryResponse? = null,
@@ -49,11 +50,20 @@ class PatientDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
-            // Load patient info
             try {
-                val patientResponse = apiService.getPatient(patientId)
-                if (patientResponse.isSuccessful) {
-                    _uiState.value = _uiState.value.copy(patient = patientResponse.body())
+                val detailResponse = apiService.getPatientDetailWithData(patientId)
+                if (detailResponse.isSuccessful) {
+                    val detail = detailResponse.body()
+                    _uiState.value = _uiState.value.copy(
+                        patientDetail = detail,
+                        medications = detail?.medications ?: emptyList()
+                    )
+                } else {
+                    // Fallback to old method
+                    val patientResponse = apiService.getPatient(patientId)
+                    if (patientResponse.isSuccessful) {
+                        _uiState.value = _uiState.value.copy(patient = patientResponse.body())
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -61,14 +71,16 @@ class PatientDetailViewModel @Inject constructor(
                 )
             }
 
-            // Load medications
-            val medResult = medicationRepository.getMedications(patientId)
-            medResult.fold(
-                onSuccess = { meds ->
-                    _uiState.value = _uiState.value.copy(medications = meds)
-                },
-                onFailure = { /* non-critical */ }
-            )
+            // Load medications if not from detail endpoint
+            if (_uiState.value.medications.isEmpty()) {
+                val medResult = medicationRepository.getMedications(patientId)
+                medResult.fold(
+                    onSuccess = { meds ->
+                        _uiState.value = _uiState.value.copy(medications = meds)
+                    },
+                    onFailure = { /* non-critical */ }
+                )
+            }
 
             // Load adherence stats
             val statsResult = adherenceRepository.getAdherenceStats(patientId)
