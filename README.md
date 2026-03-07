@@ -2,29 +2,28 @@
 
 A Kotlin Android app built with Jetpack Compose for managing medication adherence. Supports both patient and caretaker roles with real-time schedule tracking, prescription scanning, and AI-powered adherence predictions.
 
-## Architecture Overview
+## Architecture
 
 ```mermaid
-flowchart TB
+graph TD
     subgraph UI["UI Layer"]
-        Screens[("Compose Screens")]
-        ViewModels[("ViewModels")]
+        Screens[Compose Screens]
+        ViewModels[ViewModels]
     end
     
     subgraph Data["Data Layer"]
-        Repos[("Repositories")]
-        API[("Retrofit API")]
-        Room[("Room Database")]
-        Cache[("EncryptedSharedPrefs")]
+        Repos[Repositories]
+        API[Retrofit API]
+        Room[Room Database]
+        Cache[EncryptedSharedPrefs]
     end
     
     subgraph Network["Network"]
-        OkHttp[("OkHttp Client")]
-        Interceptors[("Auth + Token Refresh")]
+        OkHttp[OkHttp Client]
     end
     
-    subgraph DI["Dependency Injection"]
-        Hilt[("Hilt DI")]
+    subgraph DI["DI"]
+        Hilt[Hilt]
     end
     
     Screens --> ViewModels
@@ -33,30 +32,29 @@ flowchart TB
     Repos --> Room
     Repos --> Cache
     API --> OkHttp
-    OkHttp --> Interceptors
     Repos --> Hilt
 ```
 
 ## Navigation Flow
 
 ```mermaid
-flowchart LR
-    subgraph Auth["Authentication"]
-        Login["Login Screen"]
-        Register["Register Screen"]
+graph LR
+    subgraph Auth[Auth]
+        Login[Login]
+        Register[Register]
     end
     
-    subgraph Patient["Patient Flow"]
-        PD["Patient Dashboard"]
-        PM["Medications"]
-        PS["Scan Prescription"]
-        PH["History"]
+    subgraph Patient[Patient Flow]
+        PD[Dashboard]
+        PM[Medications]
+        PS[Scan]
+        PH[History]
     end
     
-    subgraph Caretaker["Caretaker Flow"]
-        CD["Caretaker Dashboard"]
-        PP["Patient Detail"]
-        PAM["Add Medication"]
+    subgraph Caretaker[Caretaker Flow]
+        CD[Dashboard]
+        PP[Patient Detail]
+        PAM[Add Med]
     end
     
     Login --> PD
