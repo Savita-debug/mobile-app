@@ -2,18 +2,114 @@
 
 A Kotlin Android app built with Jetpack Compose for managing medication adherence. Supports both patient and caretaker roles with real-time schedule tracking, prescription scanning, and AI-powered adherence predictions.
 
+## Architecture Overview
+
+```mermaid
+flowchart TB
+    subgraph UI["UI Layer"]
+        Screens[("Compose Screens")]
+        ViewModels[("ViewModels")]
+    end
+    
+    subgraph Data["Data Layer"]
+        Repos[("Repositories")]
+        API[("Retrofit API")]
+        Room[("Room Database")]
+        Cache[("EncryptedSharedPrefs")]
+    end
+    
+    subgraph Network["Network"]
+        OkHttp[("OkHttp Client")]
+        Interceptors[("Auth + Token Refresh")]
+    end
+    
+    subgraph DI["Dependency Injection"]
+        Hilt[("Hilt DI")]
+    end
+    
+    Screens --> ViewModels
+    ViewModels --> Repos
+    Repos --> API
+    Repos --> Room
+    Repos --> Cache
+    API --> OkHttp
+    OkHttp --> Interceptors
+    Repos --> Hilt
+```
+
+## Navigation Flow
+
+```mermaid
+flowchart LR
+    subgraph Auth["Authentication"]
+        Login["Login Screen"]
+        Register["Register Screen"]
+    end
+    
+    subgraph Patient["Patient Flow"]
+        PD["Patient Dashboard"]
+        PM["Medications"]
+        PS["Scan Prescription"]
+        PH["History"]
+    end
+    
+    subgraph Caretaker["Caretaker Flow"]
+        CD["Caretaker Dashboard"]
+        PP["Patient Detail"]
+        PAM["Add Medication"]
+    end
+    
+    Login --> PD
+    Login --> CD
+    Register --> PD
+    Register --> CD
+    PD --> PM
+    PD --> PS
+    PD --> PH
+    CD --> PP
+    PP --> PAM
+```
+
+## Data Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Screen as Compose Screen
+    participant VM as ViewModel
+    participant Repo as Repository
+    participant API as Retrofit
+    participant Room as Room DB
+    participant Backend as Django API
+    
+    User->>Screen: Interacts
+    Screen->>VM: Calls function
+    VM->>Repo: Requests data
+    Repo->>API: Network call
+    API->>Backend: HTTP Request
+    Backend-->>API: JSON Response
+    API-->>Repo: Data
+    Repo->>Room: Cache data
+    Room-->>Repo: Cached data
+    Repo-->>VM: Result
+    VM-->>Screen: Updates State
+    Screen-->>User: Renders UI
+```
+
 ## Tech Stack
 
-- **Language:** Kotlin
-- **UI:** Jetpack Compose with Material Design 3
-- **Architecture:** MVVM (ViewModel + Repository + API/Room)
-- **Networking:** Retrofit + OkHttp with JWT auth interceptors
-- **Local Storage:** Room database for offline caching
-- **Dependency Injection:** Hilt
-- **Async:** Kotlin Coroutines + Flow
-- **Reminders:** AlarmManager with notification actions
-- **Security:** EncryptedSharedPreferences for token storage
-- **Navigation:** Navigation Compose with role-based routing
+| Category | Technology |
+|----------|------------|
+| Language | Kotlin |
+| UI | Jetpack Compose + Material Design 3 |
+| Architecture | MVVM + Clean Architecture |
+| Networking | Retrofit + OkHttp |
+| Local Storage | Room Database |
+| DI | Hilt |
+| Async | Kotlin Coroutines + Flow |
+| Security | EncryptedSharedPreferences |
+| Navigation | Navigation Compose |
+| Notifications | AlarmManager |
 
 ## Project Structure
 
@@ -23,66 +119,156 @@ app/src/main/java/com/medassist/app/
 ├── MainActivity.kt              # Single activity entry point
 ├── data/
 │   ├── api/
-│   │   ├── ApiService.kt        # Retrofit interface (all endpoints)
-│   │   ├── AuthInterceptor.kt   # JWT Bearer token attachment
-│   │   └── TokenRefreshInterceptor.kt  # Auto-refresh expired tokens
+│   │   ├── ApiService.kt        # Retrofit interface
+│   │   ├── AuthInterceptor.kt   # JWT Bearer token
+│   │   └── TokenRefreshInterceptor.kt
 │   ├── local/
 │   │   ├── MedAssistDatabase.kt # Room database
-│   │   ├── dao/                 # MedicationDao, ScheduleDao
-│   │   └── entity/              # MedicationEntity, ScheduleEntity
-│   ├── model/                   # API request/response data classes
-│   └── repository/              # AuthRepo, MedicationRepo, AdherenceRepo, etc.
+│   │   ├── dao/
+│   │   │   ├── MedicationDao.kt
+│   │   │   └── ScheduleDao.kt
+│   │   └── entity/
+│   │       ├── MedicationEntity.kt
+│   │       └── ScheduleEntity.kt
+│   ├── model/
+│   │   ├── AuthModels.kt
+│   │   ├── PatientModels.kt
+│   │   ├── MedicationModels.kt
+│   │   ├── AdherenceModels.kt
+│   │   ├── PrescriptionModels.kt
+│   │   ├── ScheduleModels.kt
+│   │   └── PredictionModels.kt
+│   └── repository/
+│       ├── AuthRepository.kt
+│       ├── MedicationRepository.kt
+│       ├── AdherenceRepository.kt
+│       ├── PrescriptionRepository.kt
+│       └── PredictionRepository.kt
 ├── di/
-│   ├── AppModule.kt             # Room + DAOs
-│   └── NetworkModule.kt         # Retrofit + OkHttp
+│   ├── AppModule.kt
+│   └── NetworkModule.kt
 ├── ui/
-│   ├── navigation/NavGraph.kt   # Routes + role-based navigation
-│   ├── auth/                    # Login, Register, AuthViewModel
-│   ├── patient/                 # Dashboard, Medications, Scan, History
-│   ├── caretaker/               # Dashboard, Patient Detail, Add Medication
-│   ├── common/                  # Shared components (cards, charts, loading)
-│   └── theme/                   # Material 3 colors, typography, theme
+│   ├── navigation/
+│   │   └── NavGraph.kt
+│   ├── auth/
+│   │   ├── LoginScreen.kt
+│   │   ├── RegisterScreen.kt
+│   │   └── AuthViewModel.kt
+│   ├── patient/
+│   │   ├── PatientDashboardScreen.kt
+│   │   ├── PatientDashboardViewModel.kt
+│   │   ├── MedicationListScreen.kt
+│   │   ├── ScanPrescriptionScreen.kt
+│   │   └── HistoryScreen.kt
+│   ├── caretaker/
+│   │   ├── CaretakerDashboardScreen.kt
+│   │   ├── CaretakerDashboardViewModel.kt
+│   │   ├── PatientDetailScreen.kt
+│   │   ├── PatientDetailViewModel.kt
+│   │   ├── AddMedicationScreen.kt
+│   │   └── AddMedicationViewModel.kt
+│   ├── common/
+│   │   ├── MedicationCard.kt
+│   │   ├── AdherenceChart.kt
+│   │   ├── LoadingScreen.kt
+│   │   └── ErrorScreen.kt
+│   └── theme/
+│       ├── Color.kt
+│       ├── Theme.kt
+│       └── Type.kt
 └── util/
-    ├── TokenManager.kt          # EncryptedSharedPreferences
-    ├── AlarmScheduler.kt        # Medication reminder alarms
-    ├── NetworkUtils.kt          # Connectivity observer
-    └── Constants.kt             # Shared constants
+    ├── TokenManager.kt
+    ├── AlarmScheduler.kt
+    ├── NetworkUtils.kt
+    └── Constants.kt
 ```
+
+## Screens
+
+### Authentication
+| Screen | File | Purpose |
+|--------|------|---------|
+| Login | `ui/auth/LoginScreen.kt` | Email/password login |
+| Register | `ui/auth/RegisterScreen.kt` | User registration with role |
+
+### Patient
+| Screen | File | Purpose |
+|--------|------|---------|
+| Dashboard | `ui/patient/PatientDashboardScreen.kt` | Today's meds, streak, stats |
+| Medications | `ui/patient/MedicationListScreen.kt` | Active medications |
+| Scan | `ui/patient/ScanPrescriptionScreen.kt` | OCR prescription scan |
+| History | `ui/patient/HistoryScreen.kt` | Adherence history |
+
+### Caretaker
+| Screen | File | Purpose |
+|--------|------|---------|
+| Dashboard | `ui/caretaker/CaretakerDashboardScreen.kt` | Patient overview |
+| Patient Detail | `ui/caretaker/PatientDetailScreen.kt` | Meds, adherence, predictions |
+| Add Medication | `ui/caretaker/AddMedicationScreen.kt` | Add new medication |
 
 ## Features
 
-### Patient View
-- **Dashboard:** Today's medication schedule with "Take" buttons, adherence streak, stats
-- **Medication List:** Full list of active medications with details
-- **Scan Prescription:** Camera/gallery image capture with AI-powered OCR extraction
-- **Adherence History:** Date-range filtered logs with color-coded statuses and charts
-- **Reminders:** AlarmManager-based notifications with "Mark as Taken" action
+### Patient Features
+- Dashboard with today's medication schedule
+- "Take" medication button with time logging
+- Adherence streak display
+- Full medication list with details
+- Prescription scanning with OCR
+- Adherence history with date filtering
+- Medication reminder notifications
 
-### Caretaker View
-- **Dashboard:** Patient summary cards, search, add patient dialog
-- **Patient Detail:** Tabbed view with medications, adherence stats, and AI predictions
-- **Add Medication:** Full form with frequency dropdown, time pickers, and instructions
+### Caretaker Features
+- Patient list with search
+- Patient detail with tabs (medications, adherence, predictions)
+- Add/edit medications
+- View AI-generated risk predictions
+- Adherence statistics and charts
 
-### Offline Support
-- Room caching for medications and today's schedule
-- Falls back to cached data when network is unavailable
-- NetworkUtils with Flow-based connectivity observation
+### Technical Features
+- JWT authentication with auto-refresh
+- Offline caching with Room
+- Encrypted token storage
+- Network connectivity observation
+- Material Design 3 theming
 
 ## Setup
 
-1. Open the project in Android Studio (Arctic Fox or later)
-2. Sync Gradle dependencies
-3. Configure the API base URL in `app/build.gradle.kts` (default: `http://10.0.2.2:8000/api`)
-4. Run on an emulator or device (minimum SDK 26 / Android 8.0)
+1. **Open in Android Studio** (Arctic Fox or later)
+2. **Sync Gradle dependencies**
+3. **Configure API URL** in `app/build.gradle.kts`:
+   ```kotlin
+   buildConfigField("String", "BASE_URL", "\"http://192.168.1.X:8000/api\"")
+   ```
+4. **Run** on emulator or device (minSdk 26 / Android 8.0)
 
-## API Configuration
+### API URL Configuration
 
-The base URL defaults to `http://10.0.2.2:8000/api` for the Android emulator (maps to host machine's localhost:8000). To change it, update the `BASE_URL` buildConfigField in `app/build.gradle.kts`.
+| Environment | URL | Description |
+|-------------|-----|-------------|
+| Emulator | `http://10.0.2.2:8000/api` | Maps to host localhost |
+| Physical Device | `http://192.168.X.X:8000/api` | Your computer's IP |
 
 ## Design Principles
 
-- Large tap targets (48dp minimum) for accessibility
-- Clear, readable fonts (16sp body minimum) suitable for elderly users
-- Medical teal/cyan color scheme (#0891B2)
-- Color-coded statuses: green (taken), red (missed), yellow (late)
-- Loading, error, and empty state handling on all screens
+- **Accessibility**: Large tap targets (48dp minimum)
+- **Elderly-friendly**: Clear, readable fonts (16sp body minimum)
+- **Medical theme**: Teal/cyan color scheme (#0891B2)
+- **Status colors**: Green (taken), Red (missed), Yellow (late)
+
+## Known Issues & Improvements
+
+### Critical
+- Patient ID management after login
+- Token refresh could cause infinite loops
+
+### Moderate
+- No offline mode for first launch
+- No email/password validation
+- Prescription scanning lacks manual review
+- No medication update UI
+
+### Minor
+- Missing error handling in interceptors
+- No pull-to-refresh on all screens
+- Timezone handling issues
+- Alarms not cancelled on logout
